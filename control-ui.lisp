@@ -109,7 +109,7 @@
   (lambda (_)
     (declare (ignore _))
     (setf (height res-section) (- (inner-height (window body))
-                                  (height cmd-section) 20))))
+                                  (height cmd-section)))))
 
 (defun on-new-window (body)
   (load-css (html-document body) 
