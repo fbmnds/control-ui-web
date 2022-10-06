@@ -1,11 +1,3 @@
-(ql:quickload :clog)
-(ql:quickload :uiop)
-(ql:quickload :sqlite)
-(ql:quickload :local-time)
-(ql:quickload :parse-float)
-(ql:quickload :dexador)
-(ql:quickload :slynk)
-
 (defpackage #:control-ui
   (:use #:cl #:clog #:clog-web #:sqlite #:parse-float)
   (:local-nicknames (#:dex #:dexador)))
@@ -126,7 +118,8 @@
 
 (defun run-ui () (initialize 'on-new-window))
 
-(defun run-control-loop () (bt:make-thread #'control-loop))
+;;(defun run-control-loop () (bt:make-thread #'control-loop))
+
 
 
 
