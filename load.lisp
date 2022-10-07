@@ -2,6 +2,7 @@
   (ql:quickload :clog)
   (ql:quickload :uiop)
   (ql:quickload :alexandria)
+  (ql:quickload :yason)
   (ql:quickload :sqlite)
   (ql:quickload :local-time)
   (ql:quickload :parse-float)
