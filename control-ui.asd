@@ -15,7 +15,9 @@
    #:uiop
    #:clog)
   :components
-  ((:file "load")
+  ((:module "secrets"
+    :components
+    ((:file "secrets")))
    (:module "src"
     :components
     ((:file "control-loop")
