@@ -129,6 +129,11 @@
 
 (defun run-control-loop () (bt:make-thread #'control-loop))
 
+;; f = c * 9 / 5 + 32
+;; (f - 32) * 5 / 9 = c
+(defun f->c (f) (/ (* 5. (- f 32.)) 9.))
+(defun c->f (c) (+ (/ (* c 9.) 5.) 32.))
+
 ;; (local-time:timestamp-to-unix (local-time:parse-timestring "2022-10-01T03:00:45"))
 ;;                                                                       ^
 (defun nconvert-to-unix (date)
