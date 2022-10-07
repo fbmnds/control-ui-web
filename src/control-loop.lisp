@@ -83,21 +83,21 @@
     result))
 
 (defparameter *env* nil)
-(defun handler (env)
+(defun handler-json (env)
   (setf *env* (raw-body->yson env))
   `(200 nil (,(format nil "~a" env))))
 
-(defun handler- (env)
+(defun handler (env)
   (let ((js-hdr '(:content-type "application/javascript"))
         (path (getf env :path-info)))
     (handler-case
         (or
          ;;(route path "/index.html" 200 nil *index*)
-         (route path "/js/react.js" 200 js-hdr *react*)
-         (route path "/js/react-dom.js" 200 js-hdr *react-dom*)
-         
+         (route path "/js/d3-7.min.js" 200 js-hdr (path :d3js))
+         (route path "/js/plot-0.6.min.js" 200 js-hdr (path :plotjs))
          (route path "/assets/favicon.ico"
                 200 '(:content-type "image/x-icon") *favicon* t)
+         (handler-json env)
          `(404 nil (,(format nil "Path not found~%"))))
       (t (e) (if *debug*
                  `(500 nil (,(format nil "Internal Server Error~%~A~%" e)))
