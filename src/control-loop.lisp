@@ -12,17 +12,19 @@
        ((not ,test))
        ,@body))
 
-(defparameter *path* (str+ (uiop:getenv "HOME") "/projects/control-ui/"))
 (defparameter *paths* (make-hash-table))
-
-(setf (gethash :home *paths*) (user-homedir-pathname))
-(setf (gethash :projects *paths*)
-      (merge-pathnames #p"projects/" (gethash :home *paths*)))
-
-(load (str+ *path* "secrets/secrets.lisp"))
+(defun path (path1 &optional path2)
+  (if path2
+      (merge-pathnames path2 (gethash path1 *paths*))
+      (gethash path1 *paths*)))
+(defun set-path (key path) (setf (gethash key *paths*) path))
+(set-path :home    (user-homedir-pathname))
+(set-path :project (path :home    #p"projects/control-ui/"))
+(set-path :d3js    (path :project #p"js/d3-7.min.js"))
+(set-path :plotjs  (path :project #p"js/plot-0.6.min.js"))
 
 (defparameter *heating-data*
-  (connect (merge-pathnames #p"data/control-ui.db" *path*)))
+  (connect (merge-pathnames #p"data/control-ui.db" (path :project))))
 
 (defparameter *forever* t)
 
@@ -90,14 +92,10 @@
         (path (getf env :path-info)))
     (handler-case
         (or
-         (route path "/index.html" 200 nil *index*)
+         ;;(route path "/index.html" 200 nil *index*)
          (route path "/js/react.js" 200 js-hdr *react*)
          (route path "/js/react-dom.js" 200 js-hdr *react-dom*)
-         (route path "/js/react-bootstrap.js" 200 js-hdr *react-bootstrap*)
-         (route path "/js/App.js" 200 js-hdr *app-js*)
-         (route path "/css/toggle-switch.css" 200 nil *toggle-switch-css* t)
-         (route path "/css/bootstrap.css" 200 nil *bootstrap-css* t)
-         (route path "/js/bootstrap-bundle.js" 200 js-hdr *bootstrap-bundle-js*)
+         
          (route path "/assets/favicon.ico"
                 200 '(:content-type "image/x-icon") *favicon* t)
          `(404 nil (,(format nil "Path not found~%"))))
