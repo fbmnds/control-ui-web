@@ -21,59 +21,9 @@
     <title>PlotJS App</title>
 
   </head>
-
-  
   <body>
-
-<!--    
-    <script type="text/javascript" async=false defer=false
-            src="/js/index.js"></script>
--->    
- <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
- <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>   
- <script>
-   
-   let data;
-
-   const parse_ts = d3.timeParse("%Y-%m-%d %H:%M:%S");
-
-   d3.timeFormatDefaultLocale(
-       {
-           "dateTime": "%A, der %e. %B %Y, %X",
-           "date": "%d.%m.%Y",
-           "time": "%H:%M:%S",
-           "periods": ["AM", "PM"],
-           "days": ["Sonntag", "Montag", "Dienstag", "Mittwoch",
-                    "Donnerstag", "Freitag", "Samstag"],
-           "shortDays": ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
-           "months": ["Januar", "Februar", "MÃ¤¤rz", "April", "Mai", "Juni",
-                      "Juli", "August", "September", "Oktober", "November", "Dezember"],
-           "shortMonths": ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun",
-                           "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-       });
-
-   const setData = (result) => {
-       document.body.append(Plot.plot({
-           style: {
-               background: "transparent"
-           },
-           x: {
-               transform: d => parse_ts(d),
-           },
-           y: {
-               grid: true
-           },
-           marks: [
-               //Plot.ruleY([0]),
-               Plot.line(result, {x: "ts", y: "temp"})
-           ]
-       }));
-   };
-
-   d3.csv("/heating.csv", d3.autoType).then(setData);
-
- </script>
-     
-    
+    <script src="/js/d3-7.min.js"></script>
+    <script src="/js/plot-0.6.min.js"></script>   
+    <script src="/js/temperature.js"></script>
   </body>
 </html>
