@@ -25,6 +25,7 @@
 (set-path :index    (path :project #p"html/index.html"))
 (set-path :indexjs  (path :project #p"js/index.js"))
 (set-path :gistemp  (path :project #p"data/gistemp.csv"))
+(set-path :heating  (path :project #p"data/heating.csv"))
 (set-path :indices  (path :project #p"data/indices.csv"))
 (set-path :favicon  (path :project #p"html/favicon.ico"))
 (set-path :manifest (path :project #p"html/manifest.json"))
@@ -102,6 +103,8 @@
          (route path "/js/index.js" 200 js-hdr (path :indexjs))
          (route path "/js/d3-7.min.js" 200 js-hdr (path :d3js))
          (route path "/js/plot-0.6.min.js" 200 js-hdr (path :plotjs))
+         (route path "/heating.csv"
+                200 '(:content-type "text/csv") (path :heating) t)
          (route path "/indices.csv"
                 200 '(:content-type "text/csv") (path :indices) t)
          (route path "/gistemp.csv"

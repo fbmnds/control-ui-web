@@ -16,7 +16,7 @@ function IndexChart(data, {
   xType = d3.scaleUtc, // the x-scale type
   xDomain, // [xmin, xmax]
   xRange = [marginLeft, width - marginRight], // [left, right]
-  xFormat, // a format specifier string for the x-axis
+  xFormat = "%H:%M", // a format specifier string for the x-axis
   yType = d3.scaleLog, // the y-scale type
   yDomain, // [ymin, ymax]
   yRange = [height - marginBottom, marginTop], // [bottom, top]
@@ -156,17 +156,18 @@ function IndexChart(data, {
   return Object.assign(svg.node(), {scales: {color}, update});
 }
 
-
+const parse_ts = d3.timeParse("%Y-%m-%d %H:%M:%S");
 
 let indices;
+
 const setIndices = (result) => {
     indices = result;
 
     chart = IndexChart(indices, {
-        x: d => d.Date,
-        y: d => d.Close,
-        z: d => d.Symbol,
-        yLabel: "- Change in price (%)",
+        x: d => parse_ts(d.ts),
+        y: d => d.temp,
+        z: d => "*C",
+        yLabel: "- Temperature -",
         width : 800,
         height: 600
     });
@@ -174,7 +175,7 @@ const setIndices = (result) => {
     document.body.append(chart);
 };
 
-d3.csv("/indices.csv", d3.autoType).then(setIndices);
+d3.csv("/heating.csv", d3.autoType).then(setIndices);
 
 /*
 
