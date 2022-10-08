@@ -35,27 +35,32 @@
    
    let data;
 
+   const parse_ts = d3.timeParse("%Y-%m-%d %H:%M:%S");
+
    const setData = (result) => {
-       data = result;
        document.body.append(Plot.plot({
            style: {
                background: "transparent"
            },
+           x: {
+               transform: d => parse_ts(d)
+           },
            y: {
                grid: true
            },
+           //z: {},
            color: {
                type: "diverging",
                scheme: "burd"
            },
            marks: [
-               Plot.ruleY([0]),
-               Plot.dot(data, {x: "Date", y: "Anomaly", stroke: "Anomaly"})
+               //Plot.ruleY([0]),
+               Plot.line(result, {x: "ts", y: "temp"})
            ]
        }));
    };
 
-   d3.csv("/gistemp.csv", d3.autoType).then(setData);
+   d3.csv("/heating.csv", d3.autoType).then(setData);
 
  </script>
      
