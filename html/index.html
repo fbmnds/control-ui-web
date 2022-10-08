@@ -37,21 +37,31 @@
 
    const parse_ts = d3.timeParse("%Y-%m-%d %H:%M:%S");
 
+   d3.timeFormatDefaultLocale(
+       {
+           "dateTime": "%A, der %e. %B %Y, %X",
+           "date": "%d.%m.%Y",
+           "time": "%H:%M:%S",
+           "periods": ["AM", "PM"],
+           "days": ["Sonntag", "Montag", "Dienstag", "Mittwoch",
+                    "Donnerstag", "Freitag", "Samstag"],
+           "shortDays": ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+           "months": ["Januar", "Februar", "MÃ¤¤rz", "April", "Mai", "Juni",
+                      "Juli", "August", "September", "Oktober", "November", "Dezember"],
+           "shortMonths": ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun",
+                           "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+       });
+
    const setData = (result) => {
        document.body.append(Plot.plot({
            style: {
                background: "transparent"
            },
            x: {
-               transform: d => parse_ts(d)
+               transform: d => parse_ts(d),
            },
            y: {
                grid: true
-           },
-           //z: {},
-           color: {
-               type: "diverging",
-               scheme: "burd"
            },
            marks: [
                //Plot.ruleY([0]),
