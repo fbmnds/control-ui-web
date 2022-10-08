@@ -23,4 +23,16 @@
     ((:file "control-loop")
      (:file "control-ui")))))
 
+(asdf:defsystem #:control-loop
+  :description "Describe ps-react-example here"
+  :author "Your Name <your.name@example.com>"
+  :license  "Specify license here"
+  :version "0.0.1"
+  :serial t
+  :depends-on
+  (#:control-loop)
+  :components
+  ((:module "src"
+    :components
+    ((:file "control-ui")))))
 

@@ -1,5 +1,5 @@
 (defpackage #:control-loop
-  (:use #:cl #:sqlite #:parse-float)
+  (:use #:cl #:sqlite #:parse-float #:secrets)
   (:local-nicknames (#:dex #:dexador)
                     (#:a #:alexandria)
                     (#:yason #:yason)))
@@ -18,10 +18,16 @@
       (merge-pathnames path2 (gethash path1 *paths*))
       (gethash path1 *paths*)))
 (defun set-path (key path) (setf (gethash key *paths*) path))
-(set-path :home    (user-homedir-pathname))
-(set-path :project (path :home    #p"projects/control-ui/"))
-(set-path :d3js    (path :project #p"js/d3-7.min.js"))
-(set-path :plotjs  (path :project #p"js/plot-0.6.min.js"))
+(set-path :home     (user-homedir-pathname))
+(set-path :project  (path :home    #p"projects/control-ui/"))
+(set-path :d3js     (path :project #p"js/d3-7.min.js"))
+(set-path :plotjs   (path :project #p"js/plot-0.6.min.js"))
+(set-path :index    (path :project #p"html/index.html"))
+(set-path :indexjs  (path :project #p"js/index.js"))
+(set-path :gistemp  (path :project #p"data/gistemp.csv"))
+(set-path :indices  (path :project #p"data/indices.csv"))
+(set-path :favicon  (path :project #p"html/favicon.ico"))
+(set-path :manifest (path :project #p"html/manifest.json"))
 
 (defparameter *heating-data*
   (connect (merge-pathnames #p"data/control-ui.db" (path :project))))
@@ -56,7 +62,7 @@
   (clack-stop)
   (clack-start handler))
 
-(defun route (env-path path rc hdr body &optional ends-with)
+ (defun route (env-path path rc hdr body &optional ends-with)
   (when (if ends-with
             (a:ends-with-subseq path env-path)
             (a:starts-with-subseq path env-path))
@@ -92,11 +98,18 @@
         (path (getf env :path-info)))
     (handler-case
         (or
-         ;;(route path "/index.html" 200 nil *index*)
+         (route path "/index.html" 200 nil (path :index))
+         (route path "/js/index.js" 200 js-hdr (path :indexjs))
          (route path "/js/d3-7.min.js" 200 js-hdr (path :d3js))
          (route path "/js/plot-0.6.min.js" 200 js-hdr (path :plotjs))
-         (route path "/assets/favicon.ico"
-                200 '(:content-type "image/x-icon") *favicon* t)
+         (route path "/indices.csv"
+                200 '(:content-type "text/csv") (path :indices) t)
+         (route path "/gistemp.csv"
+                200 '(:content-type "text/csv") (path :gistemp) t)
+         (route path "/favicon.ico"
+                200 '(:content-type "image/x-icon") (path :favicon) t)
+         (route path "/manifest.json"
+                200 '(:content-type "application/json") (path :manifest) t)
          (handler-json env)
          `(404 nil (,(format nil "Path not found~%"))))
       (t (e) (if *debug*
