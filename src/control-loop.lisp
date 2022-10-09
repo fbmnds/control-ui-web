@@ -36,16 +36,23 @@
 
 (defparameter *heating-data*
   (connect (merge-pathnames #p"data/control-ui.db" (path :project))))
+(defun db-create ()
+  (execute-non-query *db* (str+ "create table heating "
+                                "(id integer primary key,"
+                                "ts text not null,"
+                                "temp float null,"
+                                "hum float null,"
+                                "state text null)")))
 
 (defparameter *forever* t)
 
 (defparameter *state-at* nil)
 (defparameter *state-duration* (* 12 60 60))
 
-(defparameter *slynk-port* 4006)
-(defun slynk-start () (slynk:create-server :port *slynk-port*  :dont-close t))
+(defparameter *slynk-port* 4007)
+(ignore-errors
+ (defun slynk-start () (slynk:create-server :port *slynk-port*  :dont-close t)))
 ;;(setf slynk:*use-dedicated-output-stream* nil) 
-
 
 (defparameter *debug* t)
 (defparameter *clack-server-type* :hunchentoot)
@@ -64,8 +71,8 @@
    (setf *clack-server* nil)))
 
 (defun clack-restart (handler)
-  (clack-stop)
-  (clack-start handler))
+  (and (clack-stop)
+       (clack-start handler)))
 
  (defun route (env-path path rc hdr body &optional ends-with)
   (when (if ends-with
@@ -87,11 +94,12 @@
       :trash))
 
 (defun raw-body->yson (env)
-  (let* ((str (raw-body->str env))
-         (yason:*parse-json-arrays-as-vectors* t)
-         ;;(yason:*parse-object-key-fn* #'maybe-convert-to-keyword)
-         (result (yason:parse str)))
-    result))
+  (ignore-errors
+   (let* ((str (raw-body->str env))
+          (yason:*parse-json-arrays-as-vectors* t)
+          ;;(yason:*parse-object-key-fn* #'maybe-convert-to-keyword)
+          (result (yason:parse str)))
+     result)))
 
 (defun chat (text &optional a64)
   (ignore-errors

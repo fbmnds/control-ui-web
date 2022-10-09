@@ -18,7 +18,8 @@ d3.timeFormatDefaultLocale({
 });
 
 const setData = (result) => {
-    document.body.append(Plot.plot({
+    const plot = document.getElementById("plot");
+    plot.appendChild(Plot.plot({
         style: {
             background: "transparent"
         },
@@ -35,5 +36,5 @@ const setData = (result) => {
     }));
 };
 
-d3.csv("/heating.csv", d3.autoType).then(setData);
+d3.csv("/data/heating.csv", d3.autoType).then(setData);
 

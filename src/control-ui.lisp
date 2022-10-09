@@ -10,46 +10,31 @@
        ((not ,test))
        ,@body))
 
-(defparameter *path* (str+ (uiop:getenv "HOME") "/projects/control-ui/"))
-(load (str+ *path* "secrets/secrets.lisp"))
-
-(defparameter *db* (connect (merge-pathnames #p"data/control-ui.db" *path*)))
-(defun db-create ()
-  (execute-non-query *db* (str+ "create table heating "
-                                "(id integer primary key,"
-                                "ts text not null,"
-                                "temp float null,"
-                                "hum float null,"
-                                "state text null)")))
-
-(defparameter *forever* t)
-
-(defparameter *state-at* nil)
-(defparameter *state-duration* (* 12 60 60))
+(defparameter *path* (str+ (uiop:getenv "HOME") "/a64/projects/control-ui/"))
+(defparameter *www-data* (merge-pathnames #P"www-data" *path*))
+;;(load (str+ *path* "secrets/secrets.lisp"))
 
 (defparameter *slynk-port* 4007)
 (ignore-errors (slynk:create-server :port *slynk-port*  :dont-close t))
-;;(setf slynk:*use-dedicated-output-stream* nil) 
+;;(setf slynk:*use-dedicated-output-stream* nil)
 
-(defun chat (text)
-  (dex:request (format nil
-                       "https://api.telegram.org/bot~a/sendMessage?chat_id=~a"
-                       *bot-token* *chat-id*)
-               :method :post
-               :headers '(("Content-Type" . "application/json"))
-               :content (format nil "{\"text\": \"~a\"}" text)))
+(defparameter *plot-section* nil)
+(defparameter *cmd-section* nil)
+(defparameter *result-section* nil)
 
-(defun chat-now (text)
-  (when *state-at*
-    (let ((ts (get-universal-time)))
-      (when (> ts (+ *state-at* *state-duration*))
-        (setf *state-at* ts)
-        (chat text)))))
 
-(defun control-loop ()
-  (while *forever*
-    (chat-now "TBD")
-    (sleep 60)))
+(defclass plot-section (clog-web-content)
+  ((data :accessor data)))
+
+(defmethod create-plot-section (body)
+  (let ((plot-section (create-web-content body :html-id "plot")))
+    (change-class plot-section 'plot-section)
+    (set-border plot-section :thin :solid :black)
+    (set-geometry plot-section :height 600)
+    (load-script (html-document body) "/js/d3-7.min.js" :wait-for-load t)
+    (load-script (html-document body) "/js/plot-0.6.min.js" :wait-for-load t)
+    (load-script (html-document body) "/js/temperature.js" :wait-for-load t)
+    plot-section))
 
 (defclass cmd-section (clog-web-content)
   ((form :accessor form :type clog-form)
@@ -103,20 +88,27 @@
     (setf (height res-section) (- (inner-height (window body))
                                   (height cmd-section)))))
 
-(defun on-new-window (body)
+(defun on-index (body)
+  (debug-mode body)
   (load-css (html-document body) 
 	    "https://unpkg.com/@picocss/pico@latest/css/pico.min.css")
   (clog-web-initialize body)
   (setf (title (html-document body)) (str+ "Control UI - " *hostname*))
-  (let ((cmd-section (create-cmd-section body))
+  (let ((plot-section (create-plot-section body))
+        (cmd-section (create-cmd-section body))
         (result-section (create-result-section body)))
+    (setf *plot-section* plot-section)
+    (setf *cmd-section* cmd-section)
+    (setf *result-section* result-section)
     (set-on-submit (form cmd-section)
                    (on-cmd result-section cmd-section))
     (let ((resize (on-resize body cmd-section result-section)))
       (funcall resize nil)
       (set-on-resize (window body) resize))))
 
-(defun run-ui () (initialize 'on-new-window))
+(defun run-ui ()
+  (initialize 'on-index :static-root *www-data*)
+  (set-on-new-window 'on-index :path "/index.html"))
 
 ;;(defun run-control-loop () (bt:make-thread #'control-loop))
 
