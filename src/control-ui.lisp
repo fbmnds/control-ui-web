@@ -28,7 +28,7 @@
 (defparameter *state-duration* (* 12 60 60))
 
 (defparameter *slynk-port* 4007)
-(slynk:create-server :port *slynk-port*  :dont-close t)
+(ignore-errors (slynk:create-server :port *slynk-port*  :dont-close t))
 ;;(setf slynk:*use-dedicated-output-stream* nil) 
 
 (defun chat (text)
