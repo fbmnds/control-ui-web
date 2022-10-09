@@ -18,6 +18,7 @@
 (ignore-errors (slynk:create-server :port *slynk-port*  :dont-close t))
 ;;(setf slynk:*use-dedicated-output-stream* nil)
 
+(defparameter *index-body* nil)
 (defparameter *plot-section* nil)
 (defparameter *cmd-section* nil)
 (defparameter *result-section* nil)
@@ -89,6 +90,7 @@
                                   (height cmd-section)))))
 
 (defun on-index (body)
+  (setf *index-body* body)
   (debug-mode body)
   (load-css (html-document body) 
 	    "https://unpkg.com/@picocss/pico@latest/css/pico.min.css")
