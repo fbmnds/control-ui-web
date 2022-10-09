@@ -95,11 +95,12 @@
 
 (defun chat (text &optional a64)
   (ignore-errors
-   (let ((host (if a64
-                   "http://localhost:5000/"
-                   (format nil
-                           "https://api.telegram.org/bot~a/sendMessage?chat_id=~a"
-                           *bot-token* *chat-id*))))
+    (let ((host
+           (if a64
+               "http://localhost:5000/"
+             (format nil
+                     "https://api.telegram.org/bot~a/sendMessage?chat_id=~a"
+                     *bot-token* *chat-id*))))
      (dex:request host
                   :method :post
                   :headers '(("Content-Type" . "application/json"))
