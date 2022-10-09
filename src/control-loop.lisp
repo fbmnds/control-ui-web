@@ -1,4 +1,4 @@
-(defpackage #:control-loop
+0(defpackage #:control-loop
   (:use #:cl #:sqlite #:parse-float #:secrets)
   (:local-nicknames (#:dex #:dexador)
                     (#:a #:alexandria)
@@ -11,6 +11,8 @@
   `(do ()
        ((not ,test))
        ,@body))
+
+(defparameter *control-loop-thread* nil)
 
 (defparameter *paths* (make-hash-table))
 (defun path (path1 &optional path2)
@@ -91,6 +93,18 @@
          (result (yason:parse str)))
     result))
 
+(defun chat (text &optional a64)
+  (ignore-errors
+   (let ((host (if a64
+                   "http://localhost:5000/"
+                   (format nil
+                           "https://api.telegram.org/bot~a/sendMessage?chat_id=~a"
+                           *bot-token* *chat-id*))))
+     (dex:request host
+                  :method :post
+                  :headers '(("Content-Type" . "application/json"))
+                  :content (format nil "{\"text\": \"~a\"}" text)))))
+
 (defparameter *env* nil)
 (defun handler-json (env)
   (setf *env* (raw-body->yson env))
@@ -123,16 +137,6 @@
                  `(500 nil (,(format nil "Internal Server Error~%~A~%" e)))
                  `(500 nil (,(format nil "Internal Server Error"))))))))
 
-(defun chat (text)
-  (dex:request (format nil
-                       (if *debug*
-                           "http://localhost:5000/bot~a/sendMessage?chat_id=~a"
-                           "https://api.telegram.org/bot~a/sendMessage?chat_id=~a")
-                       *bot-token* *chat-id*)
-               :method :post
-               :headers '(("Content-Type" . "application/json"))
-               :content (format nil "{\"text\": \"~a\"}" text)))
-
 (defun chat-now (text)
   (when *state-at*
     (let ((ts (get-universal-time)))
@@ -140,12 +144,18 @@
         (setf *state-at* ts)
         (chat text)))))
 
-(defun control-loop ()
-  (while *forever*
-    (chat-now "TBD")
+(let ((env *env*))
+  (defun control-inner-loop ()
+    (unless (eql env *env*) (print *env*))
     (sleep 60)))
 
-(defun run-control-loop () (bt:make-thread #'control-loop))
+(defun control-outer-loop ()
+  (while *forever*
+    (control-inner-loop)))
+
+(defun run-control-loop ()
+  (set *forever* t)
+  (setf *control-loop-thread* (bt:make-thread #'control-outer-loop)))
 
 ;; f = c * 9 / 5 + 32
 ;; (f - 32) * 5 / 9 = c
