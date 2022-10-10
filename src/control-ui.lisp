@@ -110,7 +110,7 @@
   (debug-mode body)
   (load-css *html-document* "/css/pico.min.css")
   (clog-web-initialize body)
-  (setf (title *html-document*) (str+ "Control UI - " *hostname*))
+  (setf (title *html-document*) (str+ "Control UI - " (uiop:hostname)))
   (let ((plot-section (create-plot-section body))
         (cmd-section (create-cmd-section body))
         (result-section (create-result-section body)))
