@@ -1,5 +1,5 @@
-
-let data;
+var plot;
+var data = [];
 
 const parse_ts = d3.timeParse("%Y-%m-%d %H:%M:%S");
 
@@ -18,7 +18,8 @@ d3.timeFormatDefaultLocale({
 });
 
 const setData = (result) => {
-    const plot = document.getElementById("plot");
+    data = result;
+    plot = document.getElementById("plot");
     plot.appendChild(Plot.plot({
         style: {
             background: "transparent"
