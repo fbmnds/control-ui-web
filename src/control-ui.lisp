@@ -19,6 +19,7 @@
 ;;(setf slynk:*use-dedicated-output-stream* nil)
 
 (defparameter *window* nil)
+(defparameter *html-document* nil)
 (defparameter *index-body* nil)
 (defparameter *plot-section* nil)
 (defparameter *cmd-section* nil)
@@ -102,12 +103,14 @@
                                   (height cmd-section)))))
 
 (defun on-index (body)
+  (setf *window* (window body))
+  (setf *html-document* (html-document body))
   (setf *index-body* body)
   (setf (width body) 640)
   (debug-mode body)
-  (load-css (html-document body) "/css/pico.min.css")
+  (load-css *html-document* "/css/pico.min.css")
   (clog-web-initialize body)
-  (setf (title (html-document body)) (str+ "Control UI - " *hostname*))
+  (setf (title *html-document*) (str+ "Control UI - " *hostname*))
   (let ((plot-section (create-plot-section body))
         (cmd-section (create-cmd-section body))
         (result-section (create-result-section body)))
@@ -119,7 +122,7 @@
                    (on-cmd result-section cmd-section))
     (let ((resize (on-resize body cmd-section result-section)))
       (funcall resize nil)
-      (set-on-resize (window body) resize))))
+      (set-on-resize *window* resize))))
 
 (defun run-ui ()
   (initialize 'on-index :static-root *www-data*)
