@@ -29,8 +29,6 @@
 (defclass plot-section (clog-web-content)
   ((data :accessor data)))
 
-
-
 (defmethod js-query-data ((plot-section plot-section))
   (setf (data plot-section) (js-query plot-section "data")))
 

@@ -22,9 +22,12 @@
         " order by ts asc;'\""))
 
 (defun fetch-delta ()
-  (let* ((last-ts (run-select-last-ts))
-         (cmd (fetch-ssh-cmd last-ts)))
-    (uiop:run-program cmd :force-shell t :output '(:string :stripped t))))
+  (ignore-errors
+   (let* ((last-ts (run-select-last-ts))
+          (cmd (fetch-ssh-cmd last-ts))
+          (delta (uiop:run-program cmd :force-shell t
+                                       :output '(:string :stripped t))))
+     (when (stringp delta) (yason:parse delta)))))
 
 (defun run-sshfs-backup-data ()
   (let* ((db-file-name
