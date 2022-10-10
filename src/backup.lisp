@@ -29,10 +29,26 @@
                                        :output '(:string :stripped t))))
      (when (stringp delta) (yason:parse delta)))))
 
+(defun insert-delta ()
+  (let ((delta (fetch-delta))
+        (db (str+ *backup-dir* (fmt-rfc3339-now) "-heating.db")))
+    (handler-case
+        (progn
+          (uiop:run-program (str+ "/bin/cp " *backup-file* " " db))
+          (let ((connected-db (sqlite:connect db)))
+            (dolist (i delta)
+              (ignore-errors
+               (execute-non-query
+                connected-db (str+ "insert into heating (ts,temp,hum,state)"
+                                   " values (?,round(?,2),round(?,2),?)")
+                (gethash "ts" i) (gethash "temp" i)
+                (gethash "hum" i) (gethash "state" i))))))
+      (error (c) c))))
+
 (defun run-sshfs-backup-data ()
   (let* ((db-file-name
            (str+ *backup-dir* (fmt-rfc3339-now) "-heating.db"))
-         (cp (str+ "/bin/cp " *prod-file* " " db-file-name)))
+         (cp (str+ "/bin/cp " *sshfs-prod-file* " " db-file-name)))
     (multiple-value-bind (_1 rc _2)
         (uiop:run-program cp :force-shell t)
       (if rc
