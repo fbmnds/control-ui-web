@@ -21,4 +21,5 @@
     ((:file "secrets")))
    (:module "src"
     :components
-    ((:file "control-ui")))))
+    ((:file "backup")
+     (:file "control-ui")))))
