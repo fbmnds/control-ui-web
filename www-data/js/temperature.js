@@ -37,5 +37,5 @@ const setData = (result) => {
     }));
 };
 
-d3.csv("/data/heating.csv", d3.autoType).then(setData);
+;;d3.csv("/data/heating.csv", d3.autoType).then(setData);
 

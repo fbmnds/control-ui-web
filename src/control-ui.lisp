@@ -29,6 +29,7 @@
 (defclass plot-section (clog-web-content)
   ((data :accessor data)))
 
+
 (defmethod js-query-data ((plot-section plot-section))
   (setf (data plot-section) (js-query plot-section "data")))
 
@@ -49,16 +50,6 @@
            (setf (data plot-section) (js-query-data plot-section))
            plot-section))
     (create-section-after (create-section body))))
-
-(defmethod update-plot-section-ssr ((plot-section plot-section) row)
-  (let* ((data (data plot-section))
-         (length (length data)))
-    (if (> length 1)
-        (progn
-          (dotimes (i (1- (1- length))) (setf (nth i data) (nth (1+ i) data)))
-          (setf (nth (1- length) data) row))
-        (setf (nth 0 data) row))
-    (js-query-data plot-section )))
 
 (defclass cmd-section (clog-web-content)
   ((form :accessor form :type clog-form)
