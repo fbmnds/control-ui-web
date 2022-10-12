@@ -1,58 +1,7 @@
-0(defpackage #:control-loop
-  (:use #:cl #:sqlite #:parse-float #:secrets)
-  (:local-nicknames (#:dex #:dexador)
-                    (#:a #:alexandria)
-                    (#:yason #:yason)))
 
-(in-package :control-loop)
+(in-package :control-ui)
 
-(defmacro str+ (&rest rest) `(concatenate 'string ,@rest))
-(defmacro while (test &rest body)
-  `(do ()
-       ((not ,test))
-       ,@body))
-
-(defparameter *control-loop-thread* nil)
-
-(defparameter *paths* (make-hash-table))
-(defun path (path1 &optional path2)
-  (if path2
-      (merge-pathnames path2 (gethash path1 *paths*))
-      (gethash path1 *paths*)))
-(defun set-path (key path) (setf (gethash key *paths*) path))
-(set-path :home        (user-homedir-pathname))
-(set-path :project     (path :home    #p"projects/control-ui/"))
-(set-path :d3js        (path :project #p"js/d3-7.min.js"))
-(set-path :plotjs      (path :project #p"js/plot-0.6.min.js"))
-(set-path :index       (path :project #p"html/index.html"))
-(set-path :indexjs     (path :project #p"js/index.js"))
-(set-path :indexchart  (path :project #p"js/index-chart.js"))
-(set-path :temperature (path :project #p"js/temperature.js"))
-(set-path :gistemp     (path :project #p"data/gistemp.csv"))
-(set-path :heating     (path :project #p"data/heating.csv"))
-(set-path :indices     (path :project #p"data/indices.csv"))
-(set-path :favicon     (path :project #p"html/favicon.ico"))
-(set-path :manifest    (path :project #p"html/manifest.json"))
-
-(defparameter *heating-data*
-  (connect (merge-pathnames #p"data/control-ui.db" (path :project))))
-(defun db-create ()
-  (execute-non-query *db* (str+ "create table heating "
-                                "(id integer primary key,"
-                                "ts text not null,"
-                                "temp float null,"
-                                "hum float null,"
-                                "state text null)")))
-
-(defparameter *forever* t)
-
-(defparameter *state-at* nil)
-(defparameter *state-duration* (* 12 60 60))
-
-(defparameter *slynk-port* 4007)
-(ignore-errors
- (defun slynk-start () (slynk:create-server :port *slynk-port*  :dont-close t)))
-;;(setf slynk:*use-dedicated-output-stream* nil) 
+(defparameter *sessions* nil)
 
 (defparameter *debug* t)
 (defparameter *clack-server-type* :hunchentoot)
@@ -74,14 +23,6 @@
   (and (clack-stop)
        (clack-start handler)))
 
- (defun route (env-path path rc hdr body &optional ends-with)
-  (when (if ends-with
-            (a:ends-with-subseq path env-path)
-            (a:starts-with-subseq path env-path))
-    (if (pathnamep body)
-        `(,rc ,hdr ,body)
-        `(,rc ,hdr (,body)))))
-
 (defun raw-body->str (env)
   (let ((raw-body (getf env :raw-body))
         str)
@@ -101,79 +42,31 @@
           (result (yason:parse str)))
      result)))
 
-(defun chat (text &optional a64)
-  (ignore-errors
-    (let ((host
-           (if a64
-               "http://localhost:5000/"
-             (format nil
-                     "https://api.telegram.org/bot~a/sendMessage?chat_id=~a"
-                     *bot-token* *chat-id*))))
-     (dex:request host
-                  :method :post
-                  :headers '(("Content-Type" . "application/json"))
-                  :content (format nil "{\"text\": \"~a\"}" text)))))
-
+;; "2022-10-10 20:49:47 17.8*C 50.8% IDLE"
+;;  0-18 20-23 27-30 33+
 (defparameter *env* nil)
+
 (defun handler-json (env)
-  (setf *env* (raw-body->yson env))
-  `(200 nil (,(format nil "~a" env))))
-
-(defun handler (env)
-  (let ((js-hdr '(:content-type "application/javascript"))
-        (path (getf env :path-info)))
-    (handler-case
-        (or
-         (route path "/index.html" 200 nil (path :index))
-         ;;(route path "/js/index.js" 200 js-hdr (path :indexjs))
-         (route path "/js/index-chart.js" 200 js-hdr (path :indexchart))
-         (route path "/js/temperature.js" 200 js-hdr (path :temperature))
-         (route path "/js/d3-7.min.js" 200 js-hdr (path :d3js))
-         (route path "/js/plot-0.6.min.js" 200 js-hdr (path :plotjs))
-         (route path "/heating.csv"
-                200 '(:content-type "text/csv") (path :heating) t)
-         (route path "/indices.csv"
-                200 '(:content-type "text/csv") (path :indices) t)
-         (route path "/gistemp.csv"
-                200 '(:content-type "text/csv") (path :gistemp) t)
-         (route path "/favicon.ico"
-                200 '(:content-type "image/x-icon") (path :favicon) t)
-         (route path "/manifest.json"
-                200 '(:content-type "application/json") (path :manifest) t)
-         (handler-json env)
-         `(404 nil (,(format nil "Path not found~%"))))
-      (t (e) (if *debug*
+  (handler-case
+      (progn
+        (setf *env* env)
+        (let* ((db (sqlite:connect *control-ui-db*))
+               (msg (gethash "text" (raw-body->yson env)))
+               (ts (subseq msg 0 19))
+               (temp (subseq msg 20 24))
+               (hum (subseq msg 27 31))
+               (state (subseq msg 33))
+               (data (str+ "{ 'ts': '" ts "',"
+                           " 'temp': " temp ","
+                           " 'hum': " hum ","
+                           " 'state': '" state "' }")))
+          (execute-non-query db
+                             (str+ "insert into heating (ts,temp,hum,state)"
+                                   " values (?,round(?,2),round(?,2),?)")
+                             ts temp hum state)
+          (dolist (s *sessions*) (plot-data (plot-section s))))
+        `(200 nil ("ok")))
+    (t (e) (if *debug*
                  `(500 nil (,(format nil "Internal Server Error~%~A~%" e)))
-                 `(500 nil (,(format nil "Internal Server Error"))))))))
-
-(defun chat-now (text)
-  (when *state-at*
-    (let ((ts (get-universal-time)))
-      (when (> ts (+ *state-at* *state-duration*))
-        (setf *state-at* ts)
-        (chat text)))))
-
-(let ((env *env*))
-  (defun control-inner-loop ()
-    (unless (eql env *env*) (print *env*))
-    (sleep 60)))
-
-(defun control-outer-loop ()
-  (while *forever*
-    (control-inner-loop)))
-
-(defun run-control-loop ()
-  (set *forever* t)
-  (setf *control-loop-thread* (bt:make-thread #'control-outer-loop)))
-
-;; f = c * 9 / 5 + 32
-;; (f - 32) * 5 / 9 = c
-(defun f->c (f) (/ (* 5. (- f 32.)) 9.))
-(defun c->f (c) (+ (/ (* c 9.) 5.) 32.))
-
-;; (local-time:timestamp-to-unix (local-time:parse-timestring "2022-10-01T03:00:45"))
-;;                                                                       ^
-(defun nconvert-to-unix (date)
-  (local-time:timestamp-to-unix
-   (local-time:parse-timestring (nsubstitute #\T #\Space date))))
+                 `(500 nil (,(format nil "Internal Server Error")))))))
 

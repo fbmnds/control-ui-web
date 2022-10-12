@@ -14,7 +14,8 @@
    #:alexandria
    #:dexador
    #:yason
-   #:clog)
+   #:clog
+   #:slynk)
   :components
   ((:module "secrets"
     :components
@@ -22,4 +23,5 @@
    (:module "src"
     :components
     ((:file "backup")
+     (:file "control-loop")
      (:file "control-ui")))))
