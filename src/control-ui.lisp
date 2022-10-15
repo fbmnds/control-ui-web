@@ -118,10 +118,11 @@
     (setf (height res-section) (- (inner-height (window body))
                                   (height cmd-section)))))
 
-(defmethod set-html-on-close ((body clog-body) _)
-  (declare (ignore _))
+(defmethod set-html-on-close ((_1 clog-body) _2)
+  (declare (ignore _1 _2))
   (setf *sessions*
-        (remove-if (lambda (session) (eql body (body session))) *sessions*)))
+        (remove-if-not (lambda (session) (connection-body (window session)))
+                       *sessions*)))
 
 (defmethod on-index ((body clog-body))
   (let ((session (initialize-session body)))
