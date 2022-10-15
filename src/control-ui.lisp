@@ -58,6 +58,9 @@
     plot-section))
 
 (defmethod plot-data ((plot-section plot-section))
+  (setf *sessions*
+        (remove-if-not (lambda (session) (connection-body (window session)))
+                       *sessions*))
   (let ((data (uiop:run-program (str+ "/usr/bin/sqlite3 -json "
                                       *control-ui-db*
                                       " 'select * from heating"
