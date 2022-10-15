@@ -118,6 +118,11 @@
     (setf (height res-section) (- (inner-height (window body))
                                   (height cmd-section)))))
 
+(defmethod set-html-on-close ((body clog-body) _)
+  (declare (ignore _))
+  (setf *sessions*
+        (remove-if (lambda (session) (eql body (body session))) *sessions*)))
+
 (defmethod on-index ((body clog-body))
   (let ((session (initialize-session body)))
     (with-slots (window body plot-section cmd-section result-section)
@@ -127,7 +132,8 @@
                      (on-cmd result-section cmd-section))
       (let ((resize (on-resize body cmd-section result-section)))
         (funcall resize nil)
-        (set-on-resize window resize)))))
+        (set-on-resize window resize))
+      (run body))))
 
 (defun run-ui ()
   (initialize 'on-index :static-root *www-data*)
