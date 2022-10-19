@@ -64,7 +64,10 @@
                              (str+ "insert into heating (ts,temp,hum,state)"
                                    " values (?,round(?,2),round(?,2),?)")
                              ts temp hum state)
-          (dolist (s *sessions*) (plot-data (plot-section s))))
+          (let ((checked (light-?)))
+            (dolist (s *sessions*)
+              (plot-data (plot-section s))
+              (js-update-light (light-section s) checked))))
         `(200 nil ("ok")))
     (t (e) (if *debug*
                  `(500 nil (,(format nil "Internal Server Error~%~A~%" e)))
