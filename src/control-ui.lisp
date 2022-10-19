@@ -18,6 +18,7 @@
   ((window :initarg :window :accessor window)
    (dom :initarg :dom :accessor dom)
    (body :initarg :body :accessor body)
+   (light-section :initarg :light-section :accessor light-section)
    (plot-section :initarg :plot-section :accessor plot-section)
    (cmd-section :initarg :cmd-section :accessor cmd-section)
    (result-section :initarg :result-section :accessor result-section)))
@@ -30,6 +31,7 @@
                                 :body body
                                 :window (window body)
                                 :dom (html-document body)
+                                :light-section (create-light-section body)
                                 :plot-section (create-plot-section body)
                                 :cmd-section (create-cmd-section body)
                                 :result-section (create-result-section body))))
@@ -37,6 +39,41 @@
     (setf (title (dom session)) (str+ "Control UI - " (uiop:hostname)))
     (push session *sessions*)
     session))
+
+(defclass light-section (clog-web-content)
+  ((form :accessor form :type clog-form)
+   (label :accessor label :type clog-label)
+   (checkbox :accessor checkbox :type clog-form-element)))
+
+(defmethod create-light-section ((body clog-body))
+  (load-script (html-document body)
+                 "/js/light.js" :wait-for-load t)
+  (let ((light-section (create-web-content body)))
+    (change-class light-section 'light-section)
+    (with-slots (form label checkbox)
+        light-section
+      (setf form (create-form light-section
+                              :html-id "light-form"))
+      (setf label (create-label form
+                                :html-id "light-label"
+                                :content "Werkstatt Licht"))
+      (setf checkbox (create-form-element form :checkbox
+                                          :html-id "light-checkbox"
+                                          :label label)))
+    light-section))
+
+(defmethod js-update-light ((light-section light-section) checked)
+  (cond ((not (numberp checked)) (js-execute light-section "lightError();"))
+          ((= 0 checked) (js-execute light-section "lightOff();"))
+          ((= 1 checked) (js-execute light-section "lightOn();"))))
+
+(defmethod on-toggle-light ((light-section light-section))
+  (lambda (_)
+    (declare (ignore _))
+    (let ((checked (light-toggle)))
+      (cond ((not (numberp checked)) (js-execute light-section "lightError();"))
+            ((= 0 checked) (js-execute light-section "lightOff();"))
+            ((= 1 checked) (js-execute light-section "lightOn();"))))))
 
 (defclass plot-section (clog-web-content)
   ((data :accessor data)))
@@ -129,9 +166,13 @@
 
 (defmethod on-index ((body clog-body))
   (let ((session (initialize-session body)))
-    (with-slots (window body plot-section cmd-section result-section)
+    (with-slots (window body
+                 light-section plot-section cmd-section result-section)
         session
+      (js-update-light light-section (light-?))
       (plot-data plot-section)
+      (set-on-click (form light-section)
+                    (on-toggle-light light-section))
       (set-on-submit (form cmd-section)
                      (on-cmd result-section cmd-section))
       (let ((resize (on-resize body cmd-section result-section)))
