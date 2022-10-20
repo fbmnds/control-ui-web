@@ -46,8 +46,6 @@
    (checkbox :accessor checkbox :type clog-form-element)))
 
 (defmethod create-light-section ((body clog-body))
-  (load-script (html-document body)
-                 "/js/light.js" :wait-for-load t)
   (let ((light-section (create-web-content body)))
     (change-class light-section 'light-section)
     (with-slots (form label checkbox)
@@ -59,13 +57,24 @@
                                 :content "Werkstatt Licht"))
       (setf checkbox (create-form-element form :checkbox
                                           :html-id "light-checkbox"
-                                          :label label)))
+                                          :label label))
+      (setf (attribute checkbox "role") "switch")
+      (place-before label checkbox))
+    (js-update-light light-section (light-?))
     light-section))
 
 (defmethod js-update-light ((light-section light-section) checked)
-  (cond ((not (numberp checked)) (js-execute light-section "lightError();"))
-          ((= 0 checked) (js-execute light-section "lightOff();"))
-          ((= 1 checked) (js-execute light-section "lightOn();"))))
+  (with-slots (label checkbox)
+      light-section
+    (cond ((not (numberp checked))
+           (remove-attribute checkbox "checked")
+           (setf (inner-html label) "Werkstatt Licht *FEHLER*"))
+          ((= 0 checked)
+           (remove-attribute checkbox "checked")
+           (setf (inner-html label) "Werkstatt Licht *AUS*"))
+          ((= 1 checked)
+           (setf (attribute checkbox "checked") nil)
+           (setf (inner-html label) "Werkstatt Licht *AN*")))))
 
 (defmethod on-toggle-light ((light-section light-section))
   (lambda (_)
