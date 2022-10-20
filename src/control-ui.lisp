@@ -42,47 +42,28 @@
     (push session *sessions*)
     session))
 
-(defclass light-section (clog-web-content)
-  ((form :accessor form :type clog-form)
-   (label :accessor label :type clog-label)
-   (checkbox :accessor checkbox :type clog-form-element)))
-
 (defmethod create-light-section ((body clog-body))
-  (let ((light-section (create-web-content body)))
-    (change-class light-section 'light-section)
-    (with-slots (form label checkbox)
-        light-section
-      (setf form (create-form light-section
-                              :html-id "light-form"))
-      (setf label (create-label form
-                                :html-id "light-label"
-                                :content "Werkstatt Licht"))
-      (setf checkbox (create-form-element form :checkbox
-                                          :html-id "light-checkbox"
-                                          :label label))
-      (setf (attribute checkbox "role") "switch")
-      (place-before label checkbox))
+  (let ((light-section (create-button body
+                                      :html-id "light"
+                                      :content "Werkstatt Licht")))
     (js-update-light light-section (light-?))
     light-section))
 
-(defmethod js-update-light ((light-section light-section) checked)
-  (with-slots (label checkbox)
-      light-section
-    (cond ((not (numberp checked))
-           (remove-attribute checkbox :checked)
-           (setf (inner-html label) "Werkstatt Licht *FEHLER*"))
-          ((= 0 checked)
-           (remove-attribute checkbox :checked)
-           (setf (inner-html label) "Werkstatt Licht *AUS*"))
-          ((= 1 checked)
-           (setf (attribute checkbox :checked) t)
-           (setf (inner-html label) "Werkstatt Licht *AN*")))))
+(defun js-update-light (light-section checked)
+  (cond ((not (numberp checked))
+         (setf (background-color light-section) :red)
+         (setf (inner-html light-section) "Werkstatt Licht *FEHLER*"))
+        ((= 0 checked)
+         (setf (background-color light-section) :grey)
+         (setf (inner-html light-section) "Werkstatt Licht *AUS*"))
+        ((= 1 checked)
+         (setf (background-color light-section) :green)
+         (setf (inner-html light-section) "Werkstatt Licht *AN*"))))
 
-(defmethod on-toggle-light ((light-section light-section))
-  (lambda (_)
+(defun on-toggle-light (_)
     (declare (ignore _))
     (let ((checked (light-toggle)))
-      (dolist (s *sessions*) (js-update-light (light-section s) checked)))))
+      (dolist (s *sessions*) (js-update-light (light-section s) checked))))
 
 (defclass plot-section (clog-web-content)
   ((data :accessor data)))
@@ -180,8 +161,7 @@
         session
       (js-update-light light-section (light-?))
       (plot-data plot-section)
-      (set-on-click (form light-section)
-                    (on-toggle-light light-section))
+      (set-on-click light-section #'on-toggle-light)
       (set-on-submit (form cmd-section)
                      (on-cmd result-section cmd-section))
       (let ((resize (on-resize body cmd-section result-section)))
