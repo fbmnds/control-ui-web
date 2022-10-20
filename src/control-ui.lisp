@@ -14,6 +14,8 @@
 (ignore-errors (slynk:create-server :port *slynk-port*  :dont-close t))
 ;;(setf slynk:*use-dedicated-output-stream* nil)
 
+(defparameter *sessions* nil)
+
 (defclass session ()
   ((window :initarg :window :accessor window)
    (dom :initarg :dom :accessor dom)
@@ -67,22 +69,20 @@
   (with-slots (label checkbox)
       light-section
     (cond ((not (numberp checked))
-           (remove-attribute checkbox "checked")
+           (remove-attribute checkbox :checked)
            (setf (inner-html label) "Werkstatt Licht *FEHLER*"))
           ((= 0 checked)
-           (remove-attribute checkbox "checked")
+           (remove-attribute checkbox :checked)
            (setf (inner-html label) "Werkstatt Licht *AUS*"))
           ((= 1 checked)
-           (setf (attribute checkbox "checked") nil)
+           (setf (attribute checkbox :checked) t)
            (setf (inner-html label) "Werkstatt Licht *AN*")))))
 
 (defmethod on-toggle-light ((light-section light-section))
   (lambda (_)
     (declare (ignore _))
     (let ((checked (light-toggle)))
-      (cond ((not (numberp checked)) (js-execute light-section "lightError();"))
-            ((= 0 checked) (js-execute light-section "lightOff();"))
-            ((= 1 checked) (js-execute light-section "lightOn();"))))))
+      (dolist (s *sessions*) (js-update-light (light-section s) checked)))))
 
 (defclass plot-section (clog-web-content)
   ((data :accessor data)))
