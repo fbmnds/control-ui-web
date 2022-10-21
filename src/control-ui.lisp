@@ -38,6 +38,7 @@
                                 :cmd-section (create-cmd-section body)
                                 :result-section (create-result-section body))))
     (load-css (dom session) "/css/pico.min.css")
+    (load-css (dom session) "/css/body.css")
     (setf (title (dom session)) (str+ "Control UI - " (uiop:hostname)))
     (push session *sessions*)
     session))
