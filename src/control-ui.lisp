@@ -169,7 +169,9 @@
       (run body))))
 
 (defun run-ui ()
-  (initialize 'on-index :static-root *www-data*)
+  (initialize 'on-index
+              :static-root *www-data*
+              :static-boot-html "/boot.html")
   (set-on-new-window 'on-index :path "/index.html"))
 
 (defun run-worker () (bt:make-thread #'control-loop))
