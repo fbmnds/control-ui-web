@@ -110,16 +110,14 @@
       (setf form (create-form cmd-section))
       (setf label (create-label form
                                 :content "Enter command"))
-      (setf text (create-form-element form :text
-                                      :class "w3-input w3-border"
-                                      :label label)))
+      (setf text (create-form-element form :text :label label)))
     cmd-section))
 
 (defclass result-section (clog-web-content)
   ())
 
 (defmethod create-result-section ((body clog-body))
-  (let ((result-section (create-web-content body :class "w3-monospace")))
+  (let ((result-section (create-web-content body)))
     (set-border result-section :thin :solid :black)
     (setf (overflow result-section) :scroll)
     result-section))
@@ -174,7 +172,7 @@
   (initialize 'on-index :static-root *www-data*)
   (set-on-new-window 'on-index :path "/index.html"))
 
-;;(defun run-control-loop () (bt:make-thread #'control-loop))
+(defun run-worker () (bt:make-thread #'control-loop))
 
 
 
